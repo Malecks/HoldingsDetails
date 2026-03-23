@@ -107,21 +107,21 @@
 
   .breakdown-card { background: #fff; border-radius: 16px; padding: 24px 20px; margin-bottom: 12px; box-shadow: 0 0.5px 0 rgba(0,0,0,0.04); }
   .breakdown-card h2 { font-size: 20px; font-weight: 700; margin-bottom: 16px; }
+  .breakdown-desc { font-size: 13px; line-height: 1.6; color: #777; margin-bottom: 20px; }
+  .iso-pie-wrap { margin-bottom: 8px; }
+  .iso-pie-wrap svg { cursor: pointer; }
+  .iso-pie-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 4px 0 0; }
+  .iso-pie-legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #666; padding: 5px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; }
+  .iso-pie-legend-item:hover { background: #f0f0f5; }
+  .iso-pie-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .iso-pie-legend-pct { font-weight: 600; color: #999; }
+  .iso-pie-block { cursor: pointer; }
+  .iso-pie-block.dimmed polygon { opacity: 0.2; }
   .tab-row { display: flex; background: #f2f2f7; border-radius: 10px; padding: 3px; margin-bottom: 20px; }
   .tab { flex: 1; text-align: center; padding: 8px; font-size: 13px; font-weight: 500; border-radius: 8px; cursor: pointer; color: #888; transition: all 0.2s; user-select: none; }
   .tab.active { background: #fff; color: #1a1a1a; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
   .tab-content { display: none; } .tab-content.active { display: block; }
-  .donut-container { display: flex; align-items: flex-start; gap: 20px; }
-  .donut-wrap { position: relative; flex-shrink: 0; }
-  .donut-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; pointer-events: none; }
-  .donut-center-pct { font-size: 22px; font-weight: 700; } .donut-center-label { font-size: 11px; color: #aaa; margin-top: 2px; }
-  .donut-segment { transition: opacity 0.3s; cursor: pointer; } .donut-segment.dimmed { opacity: 0.2; }
-  .donut-legend { display: flex; flex-direction: column; gap: 2px; flex: 1; padding-top: 4px; }
-  .donut-legend-item { display: flex; align-items: center; justify-content: space-between; padding: 8px; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
-  .donut-legend-item:hover { background: #f8f8fa; }
-  .donut-legend-left { display: flex; align-items: center; gap: 8px; }
-  .donut-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-  .donut-legend-name { font-size: 14px; } .donut-legend-pct { font-size: 14px; font-weight: 600; color: #999; }
+  /* old donut styles removed — using isometric bars for breakdowns */
 
   @media (min-width: 768px) { .page { max-width: 680px; padding-top: 12px; } }
 </style>
@@ -216,8 +216,18 @@
   <div class="breakdown-card">
     <h2>Breakdown</h2>
     <div class="tab-row"><div class="tab active" onclick="switchTab('geo',this)">Geography</div><div class="tab" onclick="switchTab('sector',this)">Sector</div></div>
-    <div class="tab-content active" id="tab-geo"><div class="donut-container"><div class="donut-wrap"><svg width="150" height="150" viewBox="0 0 150 150" id="donut-geo"></svg><div class="donut-center"><div class="donut-center-pct" id="geo-center-pct">100%</div><div class="donut-center-label" id="geo-center-label">Total</div></div></div><div class="donut-legend" id="geo-legend"></div></div></div>
-    <div class="tab-content" id="tab-sector"><div class="donut-container"><div class="donut-wrap"><svg width="150" height="150" viewBox="0 0 150 150" id="donut-sector"></svg><div class="donut-center"><div class="donut-center-pct" id="sector-center-pct">100%</div><div class="donut-center-label" id="sector-center-label">Total</div></div></div><div class="donut-legend" id="sector-legend"></div></div></div>
+
+    <div class="tab-content active" id="tab-geo">
+      <p class="breakdown-desc">Your portfolio is intentionally diversified across global markets. The US weighting reflects the depth and innovation of American capital markets, while Canadian exposure provides home-market advantages including tax efficiency. International and emerging market allocations capture growth beyond North America.</p>
+      <div class="iso-pie-wrap"><svg id="iso-pie-geo" width="100%" viewBox="0 0 420 140"></svg></div>
+      <div class="iso-pie-legend" id="iso-pie-geo-legend"></div>
+    </div>
+
+    <div class="tab-content" id="tab-sector">
+      <p class="breakdown-desc">Sector diversification helps manage concentration risk. Technology and financials represent the largest weightings, reflecting their dominance in global indices. Healthcare, energy, and infrastructure provide exposure to essential industries with different economic sensitivities.</p>
+      <div class="iso-pie-wrap"><svg id="iso-pie-sector" width="100%" viewBox="0 0 420 140"></svg></div>
+      <div class="iso-pie-legend" id="iso-pie-sector-legend"></div>
+    </div>
   </div>
 </div>
 
@@ -612,10 +622,92 @@ function switchTab(tab, el) {
   el.classList.add('active'); document.getElementById('tab-'+tab).classList.add('active');
 }
 
-// Donut
-function drawDonut(svgId,legendId,cpId,clId,data){const svg=document.getElementById(svgId),legend=document.getElementById(legendId),cp=document.getElementById(cpId),cl=document.getElementById(clId);const cx=75,cy=75,r=54,sw=22,circ=2*Math.PI*r;let off=0;const gd=3,us=360-gd*data.length;svg.innerHTML='';legend.innerHTML='';data.forEach((item,i)=>{const sd=(item.pct/100)*us,sl=(sd/360)*circ,gl=(gd/360)*circ;const c=document.createElementNS('http://www.w3.org/2000/svg','circle');c.setAttribute('cx',cx);c.setAttribute('cy',cy);c.setAttribute('r',r);c.setAttribute('fill','none');c.setAttribute('stroke',item.color);c.setAttribute('stroke-width',sw);c.setAttribute('stroke-linecap','round');c.setAttribute('stroke-dasharray',`${sl} ${circ-sl}`);c.setAttribute('stroke-dashoffset',`${-off}`);c.setAttribute('class','donut-segment');c.setAttribute('data-index',i);c.style.transform='rotate(-90deg)';c.style.transformOrigin=`${cx}px ${cy}px`;const tda=`${sl} ${circ-sl}`;c.style.strokeDasharray=`0 ${circ}`;c.style.transition='stroke-dasharray 0.7s cubic-bezier(0.22,1,0.36,1),opacity 0.3s';setTimeout(()=>{c.style.strokeDasharray=tda;},80+i*60);const hi=idx=>{svg.querySelectorAll('.donut-segment').forEach(s=>{if(+s.getAttribute('data-index')!==idx)s.classList.add('dimmed');});cp.textContent=item.pct+'%';cl.textContent=item.name;};const uh=()=>{svg.querySelectorAll('.donut-segment').forEach(s=>s.classList.remove('dimmed'));cp.textContent='100%';cl.textContent='Total';};c.addEventListener('mouseenter',()=>hi(i));c.addEventListener('mouseleave',uh);svg.appendChild(c);off+=sl+gl;const row=document.createElement('div');row.className='donut-legend-item';row.innerHTML=`<div class="donut-legend-left"><div class="donut-legend-dot" style="background:${item.color}"></div><span class="donut-legend-name">${item.name}</span></div><span class="donut-legend-pct">${item.pct}%</span>`;row.addEventListener('mouseenter',()=>hi(i));row.addEventListener('mouseleave',uh);legend.appendChild(row);});}
-drawDonut('donut-geo','geo-legend','geo-center-pct','geo-center-label',[{name:'United States',pct:45,color:'#2563eb'},{name:'Canada',pct:22,color:'#dc2626'},{name:'Intl Developed',pct:15,color:'#059669'},{name:'Global / Multi',pct:10,color:'#7c3aed'},{name:'Emerging Markets',pct:8,color:'#d97706'}]);
-drawDonut('donut-sector','sector-legend','sector-center-pct','sector-center-label',[{name:'Technology',pct:28,color:'#2563eb'},{name:'Financials',pct:22,color:'#059669'},{name:'Healthcare',pct:15,color:'#dc2626'},{name:'Energy',pct:12,color:'#d97706'},{name:'Infrastructure',pct:10,color:'#7c3aed'},{name:'Real Estate',pct:7,color:'#be185d'},{name:'Other',pct:6,color:'#9ca3af'}]);
+// ===== Isometric bar charts for breakdown =====
+function drawIsoPieChart(svgId, legendId, data) {
+  const svg = document.getElementById(svgId);
+  const legend = document.getElementById(legendId);
+  svg.innerHTML = '';
+  legend.innerHTML = '';
+
+  const totalW = 420, gap = 4, sideW = 8, topH = 12, blockH = 80, yOff = 16;
+  const usableW = totalW - sideW - (data.length - 1) * gap;
+  const total = data.reduce((s, d) => s + d.pct, 0);
+  const y = yOff + topH;
+  let x = 0;
+
+  data.forEach((item, i) => {
+    const w = (item.pct / total) * usableW;
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.setAttribute('class', 'iso-pie-block');
+    g.setAttribute('data-index', i);
+
+    // Front
+    const front = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    front.setAttribute('points', `${x},${y} ${x+w},${y} ${x+w},${y+blockH} ${x},${y+blockH}`);
+    front.setAttribute('fill', item.color);
+
+    // Top
+    const top = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    top.setAttribute('points', `${x},${y} ${x+w},${y} ${x+w+sideW},${y-topH} ${x+sideW},${y-topH}`);
+    top.setAttribute('fill', lighten(item.color, 40));
+
+    // Right
+    const right = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    right.setAttribute('points', `${x+w},${y} ${x+w+sideW},${y-topH} ${x+w+sideW},${y+blockH-topH} ${x+w},${y+blockH}`);
+    right.setAttribute('fill', darken(item.color, 35));
+
+    g.appendChild(top);
+    g.appendChild(front);
+    g.appendChild(right);
+
+    // Hover: highlight this, dim others
+    g.addEventListener('mouseenter', () => {
+      svg.querySelectorAll('.iso-pie-block').forEach(b => {
+        if (+b.getAttribute('data-index') !== i) b.classList.add('dimmed');
+      });
+    });
+    g.addEventListener('mouseleave', () => {
+      svg.querySelectorAll('.iso-pie-block').forEach(b => b.classList.remove('dimmed'));
+    });
+
+    svg.appendChild(g);
+    x += w + gap;
+
+    // Legend item
+    const row = document.createElement('div');
+    row.className = 'iso-pie-legend-item';
+    row.innerHTML = `<div class="iso-pie-legend-dot" style="background:${item.color}"></div><span>${item.name}</span><span class="iso-pie-legend-pct">${item.pct}%</span>`;
+    row.addEventListener('mouseenter', () => {
+      svg.querySelectorAll('.iso-pie-block').forEach(b => {
+        if (+b.getAttribute('data-index') !== i) b.classList.add('dimmed');
+      });
+    });
+    row.addEventListener('mouseleave', () => {
+      svg.querySelectorAll('.iso-pie-block').forEach(b => b.classList.remove('dimmed'));
+    });
+    legend.appendChild(row);
+  });
+
+  const svgH = yOff + topH + blockH + 4;
+  svg.setAttribute('viewBox', `0 0 ${totalW} ${svgH}`);
+}
+
+drawIsoPieChart('iso-pie-geo', 'iso-pie-geo-legend', [
+  { name: 'United States', pct: 45, color: '#2563eb' },
+  { name: 'Canada', pct: 22, color: '#dc2626' },
+  { name: 'Intl Developed', pct: 15, color: '#059669' },
+  { name: 'Global / Multi', pct: 10, color: '#7c3aed' },
+  { name: 'Emerging Markets', pct: 8, color: '#d97706' },
+]);
+drawIsoPieChart('iso-pie-sector', 'iso-pie-sector-legend', [
+  { name: 'Technology', pct: 28, color: '#2563eb' },
+  { name: 'Financials', pct: 22, color: '#059669' },
+  { name: 'Healthcare', pct: 15, color: '#dc2626' },
+  { name: 'Energy', pct: 12, color: '#d97706' },
+  { name: 'Infrastructure', pct: 10, color: '#7c3aed' },
+  { name: 'Real Estate', pct: 7, color: '#be185d' },
+  { name: 'Other', pct: 6, color: '#9ca3af' },
+]);
 
 // Init
 CATS.forEach(c => closeSection(c));
